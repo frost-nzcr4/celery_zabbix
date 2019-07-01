@@ -19,7 +19,8 @@ setup(
         'celery',
         'scales',
         'setuptools',
-        'zbxsend',
+        'configparser',
+        'py-zabbix'
     ],
     extras_require={'test': [
         'mock',

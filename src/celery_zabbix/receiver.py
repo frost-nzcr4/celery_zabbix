@@ -1,15 +1,20 @@
-from ConfigParser import ConfigParser
-from cStringIO import StringIO
 from functools import wraps
 from greplin import scales
 import celery.bin.base
 import collections
 import json
 import logging
-import thread
 import threading
 import time
-import zbxsend
+
+from pyzabbix import ZabbixSender, ZabbixMetric
+from configparser import ConfigParser
+from io import StringIO
+
+try:
+    import _thread as thread
+except ImportError:
+    import thread
 
 
 log = logging.getLogger(__name__)
@@ -132,10 +137,9 @@ class Command(celery.bin.base.Command):
         # Work around bug in zbxsend, they keep the fraction which zabbix
         # then rejects.
         now = int(time.time())
-        metrics = [zbxsend.Metric(self.zabbix_nodename, key, value, now)
-                   for key, value in metrics.items()]
-        log.debug(metrics)
-        zbxsend.send_to_zabbix(metrics, self.zabbix_server)
+        metrics = [ZabbixMetric(host=self.zabbix_nodename, key=key, value=value, clock=now) for key, value in metrics.items()]
+        log.info(f'metrics: {metrics}')
+        ZabbixSender(zabbix_server=self.zabbix_server).send(metrics)
 
     def check_queue_lengths(self):
         while not self.should_stop:
