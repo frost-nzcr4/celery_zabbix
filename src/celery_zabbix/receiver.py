@@ -149,6 +149,10 @@ class Command(celery.bin.base.Command):
             try:
                 lengths = collections.Counter()
 
+                print('a' * 150)
+                print('A=%r', getattr(self, 'client', 'self.CLIENT NOT SET'))
+                print('B=%r', getattr(self.app, 'client', 'self.app.CLIENT NOT SET'))
+                print('b' * 150)
                 queues = self.app.conf.task_queues or self.app.queues
                 if queues:
                     with self.app.backend.client.pipeline(transaction=False) as pipe:
@@ -165,6 +169,9 @@ class Command(celery.bin.base.Command):
 
                     unacked = result.pop()
                     for task in unacked:
+                        print('task=%r', task)
+                        print('task.headers=%r', task.headers)
+                        print('task could be not json', task.headers)
                         task = json.loads(task.decode('utf-8'))
                         lengths[task[-1]] += 1
                     unacked = [[-1] for v in unacked]
