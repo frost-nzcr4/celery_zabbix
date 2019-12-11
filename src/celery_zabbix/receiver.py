@@ -144,13 +144,12 @@ class Command(celery.bin.base.Command):
         ZabbixSender(zabbix_server=self.zabbix_server).send(metrics)
 
     def check_queue_lengths(self):
+        """ Redis backend only. """
         while not self.should_stop:
             try:
                 lengths = collections.Counter()
 
-                with self.app.connection() as connection:
-                    pipe = connection.channel().client.pipeline(
-                        transaction=False)
+                with self.app.client.pipeline(transaction=False) as pipe:
                     for queue in self.app.conf['task_queues']:
                         if not hasattr(stats_queue, queue.name):
                             setattr(type(stats_queue), queue.name,
@@ -257,5 +256,5 @@ class Command(celery.bin.base.Command):
 
         parser.add_argument(
             '--queuelength-interval',
-            help='Check queue lengths every x seconds (0=disabled)',
+            help='Check Redis queue lengths every x seconds (0=disabled)',
             type=int, default=0)
