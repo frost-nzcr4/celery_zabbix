@@ -137,10 +137,8 @@ class Command(celery.bin.base.Command):
         if not (self.zabbix_server and self.zabbix_nodename):
             log.warning('No zabbix connection configured, not sending metrics')
             return
-        # Work around bug in zbxsend, they keep the fraction which zabbix
-        # then rejects.
-        now = int(time.time())
-        metrics = [ZabbixMetric(host=self.zabbix_nodename, key=key, value=value, clock=now) for key, value in metrics.items()]
+
+        metrics = [ZabbixMetric(host=self.zabbix_nodename, key=key, value=value) for key, value in metrics.items()]
         log.debug('metrics: %s', metrics)
         ZabbixSender(zabbix_server=self.zabbix_server).send(metrics)
 
