@@ -149,30 +149,32 @@ class Command(celery.bin.base.Command):
             try:
                 lengths = collections.Counter()
 
-                with self.app.client.pipeline(transaction=False) as pipe:
-                    for queue in self.app.conf['task_queues']:
-                        if not hasattr(stats_queue, queue.name):
-                            setattr(type(stats_queue), queue.name,
-                                    scales.Stat(queue.name))
-                        # Not claimed by any worker yet
-                        pipe.llen(queue.name)
-                    # Claimed by worker but not acked/processed yet
-                    pipe.hvals('unacked')
+                queues = self.app.conf.task_queues or self.app.queues
+                if queues:
+                    with self.app.backend.client.pipeline(transaction=False) as pipe:
+                        for queue in queues:
+                            if not hasattr(stats_queue, queue.name):
+                                setattr(type(stats_queue), queue.name,
+                                        scales.Stat(queue.name))
+                            # Not claimed by any worker yet
+                            pipe.llen(queue.name)
+                        # Claimed by worker but not acked/processed yet
+                        pipe.hvals('unacked')
 
-                    result = pipe.execute()
+                        result = pipe.execute()
 
-                unacked = result.pop()
-                for task in unacked:
-                    task = json.loads(task.decode('utf-8'))
-                    lengths[task[-1]] += 1
-                unacked = [[-1] for v in unacked]
-                unacked = len([x for x in unacked])
+                    unacked = result.pop()
+                    for task in unacked:
+                        task = json.loads(task.decode('utf-8'))
+                        lengths[task[-1]] += 1
+                    unacked = [[-1] for v in unacked]
+                    unacked = len([x for x in unacked])
 
-                for llen, queue in zip(result, self.app.conf['task_queues']):
-                    lengths[queue.name] += llen
+                    for llen, queue in zip(result, queues):
+                        lengths[queue.name] += llen
 
-                for queue, length in lengths.items():
-                    setattr(stats_queue, queue, length)
+                    for queue, length in lengths.items():
+                        setattr(stats_queue, queue, length)
 
                 time.sleep(self.queuelength_interval)
             except Exception:
