@@ -7,8 +7,8 @@ import logging
 import sys
 import threading
 import time
-import zbxsend
 
+from pyzabbix import ZabbixSender, ZabbixMetric
 
 if sys.version_info < (3,):
     from ConfigParser import ConfigParser
@@ -140,10 +140,9 @@ class Command(celery.bin.base.Command):
         # Work around bug in zbxsend, they keep the fraction which zabbix
         # then rejects.
         now = int(time.time())
-        metrics = [zbxsend.Metric(self.zabbix_nodename, key, value, now)
-                   for key, value in metrics.items()]
-        log.debug(metrics)
-        zbxsend.send_to_zabbix(metrics, self.zabbix_server)
+        metrics = [ZabbixMetric(host=self.zabbix_nodename, key=key, value=value, clock=now) for key, value in metrics.items()]
+        log.info(f'metrics: {metrics}')
+        ZabbixSender(zabbix_server=self.zabbix_server).send(metrics)
 
     def check_queue_lengths(self):
         while not self.should_stop:
