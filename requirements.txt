@@ -1,8 +1,8 @@
---index=https://devpi.zeit.de/zeit/default
+#--index=https://devpi.zeit.de/zeit/default
 
 # dependencies
 scales == 1.0.9
-zbxsend == 0.1.6+py3
+py-zabbix==1.1.5
 
 # celery
 amqp == 2.4.0
