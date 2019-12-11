@@ -141,7 +141,7 @@ class Command(celery.bin.base.Command):
         # then rejects.
         now = int(time.time())
         metrics = [ZabbixMetric(host=self.zabbix_nodename, key=key, value=value, clock=now) for key, value in metrics.items()]
-        log.info(f'metrics: {metrics}')
+        log.debug('metrics: %s', metrics)
         ZabbixSender(zabbix_server=self.zabbix_server).send(metrics)
 
     def check_queue_lengths(self):
