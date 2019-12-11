@@ -1,4 +1,4 @@
-from functools import wraps
+from functools import partial, wraps
 from greplin import scales
 import celery.bin.base
 import collections
@@ -138,7 +138,8 @@ class Command(celery.bin.base.Command):
             log.warning('No zabbix connection configured, not sending metrics')
             return
 
-        metrics = [ZabbixMetric(host=self.zabbix_nodename, key=key, value=value) for key, value in metrics.items()]
+        zmetric = partial(ZabbixMetric, host=self.zabbix_nodename)
+        metrics = [zmetric(key=k, value=v) for k, v in metrics.items()]
         log.debug('metrics: %s', metrics)
         ZabbixSender(zabbix_server=self.zabbix_server).send(metrics)
 
